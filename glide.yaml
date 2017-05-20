@@ -1,0 +1,6 @@
+package: github.com/migueleliasweb/persec
+import:
+- package: github.com/garyburd/redigo
+  version: v1.1.0
+  subpackages:
+  - redis
