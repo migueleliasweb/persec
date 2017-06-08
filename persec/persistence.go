@@ -60,6 +60,10 @@ func GetTotalRequests(
 
 //GetAvgRequests Returns avg requests for the given duration
 func GetAvgRequests(totalRequests int, totalRequestsDuration time.Duration, desiredDuration time.Duration) int64 {
+	if desiredDuration.Seconds() < time.Second.Seconds() {
+		desiredDuration = time.Second
+		log.Println("GetAvgRequests() received a desiredDuration too short. Forcing it to be 1 second.")
+	}
 	perSecondAvg := int64(totalRequests) / int64(totalRequestsDuration.Seconds())
 	return perSecondAvg * int64(desiredDuration.Seconds())
 }
