@@ -1,4 +1,4 @@
-package main
+package persec
 
 import (
 	"log"
@@ -9,19 +9,15 @@ import (
 )
 
 //GetRedisConn Returns the connection to Redis
-func GetRedisConn(redisURL string) *redis.Conn {
+func GetRedisConn(redisURL string) (*redis.Conn, error) {
 	c, err := redis.DialURL(redisURL)
 
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	return &c
+	return &c, err
 }
 
 //GetRequestKeyTimestamp Get the complete RequestKey
-func GetRequestKeyTimestamp(requestKey string) string {
-	return requestKey + "_" + strconv.FormatInt(time.Now().Unix(), 10)
+func GetRequestKeyTimestamp(requestKey string, timestamp time.Time) string {
+	return requestKey + "_" + strconv.FormatInt(timestamp.Unix(), 10)
 }
 
 //IncrementRequestKey Inscrements the amount of times a certain key was requested
@@ -32,13 +28,18 @@ func IncrementRequestKey(conn *redis.Conn, requestKeyTimestamp string) {
 //GetTotalRequests Returns the total requests for the give period
 func GetTotalRequests(
 	conn *redis.Conn,
-	requestKeyTimestamp string,
+	requestKeyWithoutTimestamp string,
 	timestampStart int64,
 	timestampEnd int64) (int, time.Duration) {
 	total := 0
 	seconds := 0
+	now := time.Now()
 	for timestampEnd > timestampStart {
-		requestsNum, cmdErr := redis.Int((*conn).Do("GET", requestKeyTimestamp))
+		requestKeyWithTimestamp := GetRequestKeyTimestamp(
+			requestKeyWithoutTimestamp,
+			now,
+		)
+		requestsNum, cmdErr := redis.Int((*conn).Do("GET", requestKeyWithTimestamp))
 
 		if cmdErr != nil {
 			if cmdErr.Error() != redis.ErrNil.Error() {
@@ -50,7 +51,7 @@ func GetTotalRequests(
 
 		total += requestsNum
 		seconds++
-		timestampEnd--
+		now = now.Add(-time.Second)
 	}
 
 	//With this approach we can estimate better the throughput
