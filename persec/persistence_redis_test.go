@@ -8,18 +8,35 @@ import (
 //FakeConn Fake redis connection
 type FakeConn struct{}
 
-func (conn FakeConn) Close() error                                       { return nil }
-func (conn FakeConn) Err() error                                         { return nil }
-func (conn FakeConn) Send(commandName string, args ...interface{}) error { return nil }
-func (conn FakeConn) Flush() error                                       { return nil }
-func (conn FakeConn) Receive() (interface{}, error)                      { return nil, nil }
+func (conn FakeConn) Close() error                                                    { return nil }
+func (conn FakeConn) Err() error                                                      { return nil }
+func (conn FakeConn) Send(commandName string, args ...interface{}) error              { return nil }
+func (conn FakeConn) Flush() error                                                    { return nil }
+func (conn FakeConn) Receive() (interface{}, error)                                   { return nil, nil }
+func (conn FakeConn) Do(commandName string, args ...interface{}) (interface{}, error) { return nil, nil }
 
-func (conn FakeConn) Do(commandName string, args ...interface{}) (interface{}, error) {
+type FakeConnGetter struct {
+	FakeConn
+}
+
+func (conn FakeConnGetter) Do(commandName string, args ...interface{}) (interface{}, error) {
 	return int64(100), nil
 }
 
+type FakeConnIncr struct {
+	FakeConn
+	incrCalled bool
+}
+
+func (conn FakeConnIncr) Do(commandName string, args ...interface{}) (interface{}, error) {
+	if commandName == "INCR" {
+		conn.incrCalled = true
+	}
+	return nil, nil
+}
+
 func TestGetTotalRequests(t *testing.T) {
-	conn := FakeConn{}
+	conn := FakeConnGetter{}
 	timestampStart := time.Now().Unix()
 	timestampEnd := timestampStart + 10
 	requestKeyWithoutTimestamp := "FOO"
@@ -61,4 +78,17 @@ func TestFailGetTotalRequests(t *testing.T) {
 		timestampStart,
 		timestampEnd,
 	)
+}
+
+func TestIncrementRequestKey(t *testing.T) {
+	conn := FakeConnIncr{}
+	requestKeyTimestamp := GetRequestKeyTimestamp(
+		"FOO",
+		time.Now())
+
+	IncrementRequestKey(conn, requestKeyTimestamp)
+
+	if conn.incrCalled != true {
+		t.Error("INCR not called.")
+	}
 }
