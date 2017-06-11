@@ -21,25 +21,29 @@ func GetRequestKeyTimestamp(requestKey string, timestamp time.Time) string {
 }
 
 //IncrementRequestKey Inscrements the amount of times a certain key was requested
-func IncrementRequestKey(conn *redis.Conn, requestKeyTimestamp string) {
-	(*conn).Do("INCR", requestKeyTimestamp)
+func IncrementRequestKey(conn redis.Conn, requestKeyTimestamp string) {
+	conn.Do("INCR", requestKeyTimestamp)
 }
 
 //GetTotalRequests Returns the total requests for the give period
 func GetTotalRequests(
-	conn *redis.Conn,
+	conn redis.Conn,
 	requestKeyWithoutTimestamp string,
 	timestampStart int64,
 	timestampEnd int64) (int, time.Duration) {
+
+	if timestampEnd < timestampStart {
+		log.Panicln("timestampEnd must be lower than timestampStart.")
+	}
+
 	total := 0
 	seconds := 0
-	now := time.Now()
 	for timestampEnd > timestampStart {
 		requestKeyWithTimestamp := GetRequestKeyTimestamp(
 			requestKeyWithoutTimestamp,
-			now,
+			time.Unix(timestampEnd, 0),
 		)
-		requestsNum, cmdErr := redis.Int((*conn).Do("GET", requestKeyWithTimestamp))
+		requestsNum, cmdErr := redis.Int(conn.Do("GET", requestKeyWithTimestamp))
 
 		if cmdErr != nil {
 			if cmdErr.Error() != redis.ErrNil.Error() {
@@ -51,11 +55,11 @@ func GetTotalRequests(
 
 		total += requestsNum
 		seconds++
-		now = now.Add(-time.Second)
+		timestampEnd--
 	}
 
 	//With this approach we can estimate better the throughput
-	return total, time.Duration(seconds)
+	return total, time.Duration(seconds) * time.Second
 }
 
 //GetAvgRequests Returns avg requests for the given duration
