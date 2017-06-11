@@ -1,6 +1,7 @@
 package persec
 
 import (
+	"log"
 	"testing"
 	"time"
 )
@@ -25,12 +26,12 @@ func (conn FakeConnGetter) Do(commandName string, args ...interface{}) (interfac
 
 type FakeConnIncr struct {
 	FakeConn
-	incrCalled bool
 }
 
 func (conn FakeConnIncr) Do(commandName string, args ...interface{}) (interface{}, error) {
 	if commandName == "INCR" {
-		conn.incrCalled = true
+		// couldn't find a better way to test this for now...
+		log.Panic("INCR called !")
 	}
 	return nil, nil
 }
@@ -86,9 +87,11 @@ func TestIncrementRequestKey(t *testing.T) {
 		"FOO",
 		time.Now())
 
-	IncrementRequestKey(conn, requestKeyTimestamp)
+	defer func() {
+		if r := recover(); r != "INCR called !" {
+			t.Errorf("Wrong panic on TestIncrementRequestKey()")
+		}
+	}()
 
-	if conn.incrCalled != true {
-		t.Error("INCR not called.")
-	}
+	IncrementRequestKey(conn, requestKeyTimestamp)
 }
