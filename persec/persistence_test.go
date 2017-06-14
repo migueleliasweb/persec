@@ -14,7 +14,7 @@ func TestFailGetRedisConn(t *testing.T) {
 }
 
 func TestSimpleGetAvgRequests(t *testing.T) {
-	avg := GetAvgRequests(
+	avg := GetOptimisticAvgRequests(
 		1000,
 		time.Second*100,
 		time.Second)
@@ -25,7 +25,7 @@ func TestSimpleGetAvgRequests(t *testing.T) {
 }
 
 func TestSimple2GetAvgRequests(t *testing.T) {
-	avg := GetAvgRequests(
+	avg := GetOptimisticAvgRequests(
 		1000,
 		time.Second*100,
 		time.Second*1000)
@@ -36,7 +36,7 @@ func TestSimple2GetAvgRequests(t *testing.T) {
 }
 
 func TestZeroDivGetAvgRequests(t *testing.T) {
-	avg := GetAvgRequests(
+	avg := GetOptimisticAvgRequests(
 		1000,
 		time.Second*100,
 		0)

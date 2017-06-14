@@ -1,8 +1,33 @@
-hash: ecb16833331cd8c18367951b490f382aa6d4edc6260dd2322bd1c29241c87e6e
-updated: 2017-05-20T01:37:16.644723855-03:00
+hash: e1028336b37736c9ba23bbd85524eb86f2ad5cdc564d2590f655a983dcf26729
+updated: 2017-06-13T23:26:55.382335541-03:00
 imports:
 - name: github.com/garyburd/redigo
   version: 433969511232c397de61b1442f9fd49ec06ae9ba
   subpackages:
+  - internal
   - redis
+- name: github.com/labstack/echo
+  version: 1049c9613cd371b7ea8f219404c9a821734781ed
+- name: github.com/labstack/gommon
+  version: 1121fd3e243c202482226a7afe4dcd07ffc4139a
+  subpackages:
+  - color
+  - log
+- name: github.com/mattn/go-colorable
+  version: ded68f7a9561c023e790de24279db7ebf473ea80
+- name: github.com/mattn/go-isatty
+  version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
+- name: github.com/valyala/bytebufferpool
+  version: e746df99fe4a3986f4d4f79e13c1e0117ce9c2f7
+- name: github.com/valyala/fasttemplate
+  version: dcecefd839c4193db0d35b88ec65b4c12d360ab0
+- name: golang.org/x/crypto
+  version: 850760c427c516be930bc91280636328f1a62286
+  subpackages:
+  - acme
+  - acme/autocert
+- name: golang.org/x/sys
+  version: 0b25a408a50076fbbcae6b7ac0ea5fbb0b085e79
+  subpackages:
+  - unix
 testImports: []

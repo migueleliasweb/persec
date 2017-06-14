@@ -4,3 +4,5 @@ import:
   version: v1.1.0
   subpackages:
   - redis
+- package: github.com/labstack/echo
+  version: v3.1.0

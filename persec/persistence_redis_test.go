@@ -42,7 +42,7 @@ func TestGetTotalRequests(t *testing.T) {
 	timestampEnd := timestampStart + 10
 	requestKeyWithoutTimestamp := "FOO"
 
-	total, duration := GetTotalRequests(
+	total, duration, _ := GetTotalRequests(
 		conn,
 		requestKeyWithoutTimestamp,
 		timestampStart,

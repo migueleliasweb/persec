@@ -9,10 +9,10 @@ import (
 )
 
 //GetRedisConn Returns the connection to Redis
-func GetRedisConn(redisURL string) (*redis.Conn, error) {
+func GetRedisConn(redisURL string) (redis.Conn, error) {
 	c, err := redis.DialURL(redisURL)
 
-	return &c, err
+	return c, err
 }
 
 //GetRequestKeyTimestamp Get the complete RequestKey
@@ -21,8 +21,8 @@ func GetRequestKeyTimestamp(requestKey string, timestamp time.Time) string {
 }
 
 //IncrementRequestKey Inscrements the amount of times a certain key was requested
-func IncrementRequestKey(conn redis.Conn, requestKeyTimestamp string) {
-	conn.Do("INCR", requestKeyTimestamp)
+func IncrementRequestKey(conn redis.Conn, requestKeyTimestamp string) (int, error) {
+	return redis.Int(conn.Do("INCR", requestKeyTimestamp))
 }
 
 //GetTotalRequests Returns the total requests for the give period
@@ -30,7 +30,7 @@ func GetTotalRequests(
 	conn redis.Conn,
 	requestKeyWithoutTimestamp string,
 	timestampStart int64,
-	timestampEnd int64) (int, time.Duration) {
+	timestampEnd int64) (int, time.Duration, error) {
 
 	if timestampEnd < timestampStart {
 		log.Panicln("timestampEnd must be lower than timestampStart.")
@@ -38,6 +38,7 @@ func GetTotalRequests(
 
 	total := 0
 	seconds := 0
+	var cmdReturnErr error
 	for timestampEnd > timestampStart {
 		requestKeyWithTimestamp := GetRequestKeyTimestamp(
 			requestKeyWithoutTimestamp,
@@ -47,9 +48,10 @@ func GetTotalRequests(
 
 		if cmdErr != nil {
 			if cmdErr.Error() != redis.ErrNil.Error() {
-				break
+				continue
 			} else {
-				log.Panicf("Got error from Redis: %e", cmdErr)
+				cmdReturnErr = cmdErr
+				break
 			}
 		}
 
@@ -59,15 +61,25 @@ func GetTotalRequests(
 	}
 
 	//With this approach we can estimate better the throughput
-	return total, time.Duration(seconds) * time.Second
+	return total, time.Duration(seconds) * time.Second, cmdReturnErr
 }
 
-//GetAvgRequests Returns avg requests for the given duration
-func GetAvgRequests(totalRequests int, totalRequestsDuration time.Duration, desiredDuration time.Duration) int64 {
+//GetOptimisticAvgRequests Returns avg requests for the given duration optimistically
+func GetOptimisticAvgRequests(totalRequests int, totalRequestsDuration time.Duration, desiredDuration time.Duration) int64 {
 	if desiredDuration.Seconds() < time.Second.Seconds() {
 		desiredDuration = time.Second
-		log.Println("GetAvgRequests() received a desiredDuration too short. Forcing it to be 1 second.")
+		log.Println("GetOptimisticAvgRequests() received a desiredDuration too short. Forcing it to be 1 second.")
 	}
 	perSecondAvg := int64(totalRequests) / int64(totalRequestsDuration.Seconds())
 	return perSecondAvg * int64(desiredDuration.Seconds())
+}
+
+//GetRealAvgRequests Returns avg requests for the given duration realistically
+func GetRealAvgRequests(totalRequests int, desiredDuration time.Duration) int64 {
+	if desiredDuration.Seconds() < time.Second.Seconds() {
+		desiredDuration = time.Second
+		log.Println("GetRealAvgRequests() received a desiredDuration too short. Forcing it to be 1 second.")
+	}
+
+	return int64(totalRequests) / int64(desiredDuration.Seconds())
 }
